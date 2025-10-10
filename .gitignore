@@ -1,9 +1,13 @@
 # Environment files with secrets
 .env
+.env.local
+.env.*.local
 
 # Traefik certificates and logs
 traefik/letsencrypt/
 traefik/logs/
+traefik/certs/*.pem
+traefik/certs/*.key
 
 # Docker volumes data
 *_data/

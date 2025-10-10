@@ -5,44 +5,20 @@ api:
 entryPoints:
   web:
     address: ":80"
-    http:
-      redirections:
-        entryPoint:
-          to: websecure
-          scheme: https
-          permanent: true
 
   websecure:
     address: ":443"
     http:
-      tls:
-        certResolver: cloudflare
-        domains:
-          - main: "1sourcesystems.com.au"
-            sans:
-              - "*.1sourcesystems.com.au"
+      tls: {}
 
 providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
-    network: external
 
   file:
     filename: /etc/traefik/dynamic.yml
     watch: true
-
-certificatesResolvers:
-  cloudflare:
-    acme:
-      email: admin@1sourcesystems.com.au
-      storage: /letsencrypt/acme.json
-      dnsChallenge:
-        provider: cloudflare
-        resolvers:
-          - "1.1.1.1:53"
-          - "8.8.8.8:53"
-        delayBeforeCheck: 30
 
 log:
   level: INFO

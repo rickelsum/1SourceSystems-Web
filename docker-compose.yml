@@ -11,19 +11,17 @@ services:
     ports:
       - "0.0.0.0:80:80"
       - "0.0.0.0:443:443"
-    environment:
-      - CF_API_EMAIL=${CF_API_EMAIL}
-      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
-      - ./traefik/letsencrypt:/letsencrypt
+      - ./traefik/certs/origin-cert.pem:/etc/traefik/certs/origin-cert.pem:ro
+      - ./traefik/certs/origin-key.pem:/etc/traefik/certs/origin-key.pem:ro
       - ./traefik/logs:/var/log/traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.entrypoints=web"
       - "traefik.http.routers.traefik.rule=Host(`traefik.1sourcesystems.com.au`)"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.middlewares=secure-headers@file"
@@ -57,7 +55,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=1sourcesystems-ai-lab_external"
-      - "traefik.http.routers.open-webui.entrypoints=websecure"
+      - "traefik.http.routers.open-webui.entrypoints=web"
       - "traefik.http.routers.open-webui.rule=Host(`ai.1sourcesystems.com.au`)"
       - "traefik.http.routers.open-webui.middlewares=secure-headers@file"
       - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
@@ -75,7 +73,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=1sourcesystems-ai-lab_external"
-      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.entrypoints=web"
       - "traefik.http.routers.portainer.rule=Host(`portainer.1sourcesystems.com.au`)"
       - "traefik.http.routers.portainer.middlewares=secure-headers@file"
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
@@ -125,7 +123,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=1sourcesystems-ai-lab_external"
-      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.entrypoints=web"
       - "traefik.http.routers.n8n.rule=Host(`n8n.1sourcesystems.com.au`)"
       - "traefik.http.routers.n8n.middlewares=secure-headers@file"
       - "traefik.http.services.n8n.loadbalancer.server.port=5678"
@@ -144,7 +142,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=1sourcesystems-ai-lab_external"
-      - "traefik.http.routers.adminer.entrypoints=websecure"
+      - "traefik.http.routers.adminer.entrypoints=web"
       - "traefik.http.routers.adminer.rule=Host(`db.1sourcesystems.com.au`)"
       - "traefik.http.routers.adminer.middlewares=secure-headers@file"
       - "traefik.http.services.adminer.loadbalancer.server.port=8080"
@@ -156,18 +154,30 @@ services:
     environment:
       - API_KEY=${CF_DNS_API_TOKEN}
       - ZONE=${DOMAIN:-1sourcesystems.com.au}
-      - SUBDOMAIN=@
-      - PROXIED=false
+      - SUBDOMAIN=staging
+      - PROXIED=true
       - RRTYPE=A
       - DELETE_ON_STOP=false
       - DNS_SERVER=1.1.1.1
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    networks:
+      - external
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    # Alternative: use config file instead of token
+    # volumes:
+    #   - ./cloudflared:/etc/cloudflared
+    # command: tunnel --config /etc/cloudflared/config.yml run
+
 networks:
   external:
-    name: 1sourcesystems-ai-lab_external
     driver: bridge
   internal:
-    name: 1sourcesystems-ai-lab_internal
     driver: bridge
     internal: true
 

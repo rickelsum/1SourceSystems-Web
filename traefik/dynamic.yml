@@ -4,11 +4,13 @@ http:
     # Security headers
     secure-headers:
       headers:
-        sslRedirect: true
-        forceSTSHeader: true
-        stsIncludeSubdomains: true
-        stsPreload: true
-        stsSeconds: 31536000
+        sslRedirect: false
+        forceSTSHeader: false
+        stsIncludeSubdomains: false
+        stsPreload: false
+        customResponseHeaders:
+          X-Frame-Options: "SAMEORIGIN"
+          X-Content-Type-Options: "nosniff"
 
     # Rate limiting
     rate-limit:
@@ -25,6 +27,18 @@ http:
     #       - "172.16.0.0/12"
 
 tls:
+  certificates:
+    - certFile: /etc/traefik/certs/origin-cert.pem
+      keyFile: /etc/traefik/certs/origin-key.pem
+      stores:
+        - default
+
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/origin-cert.pem
+        keyFile: /etc/traefik/certs/origin-key.pem
+
   options:
     default:
       minVersion: VersionTLS12
