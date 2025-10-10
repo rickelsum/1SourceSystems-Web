@@ -1,0 +1,179 @@
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - external
+      - internal
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    environment:
+      - CF_API_EMAIL=${CF_API_EMAIL}
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./traefik/letsencrypt:/letsencrypt
+      - ./traefik/logs:/var/log/traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.1sourcesystems.com.au`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=secure-headers@file"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    runtime: nvidia
+    networks:
+      - internal
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    # Internal only - no external access
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    networks:
+      - external
+      - internal
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - open_webui_data:/app/backend/data
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=1sourcesystems-ai-lab_external"
+      - "traefik.http.routers.open-webui.entrypoints=websecure"
+      - "traefik.http.routers.open-webui.rule=Host(`ai.1sourcesystems.com.au`)"
+      - "traefik.http.routers.open-webui.middlewares=secure-headers@file"
+      - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    networks:
+      - external
+      - internal
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=1sourcesystems-ai-lab_external"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.1sourcesystems.com.au`)"
+      - "traefik.http.routers.portainer.middlewares=secure-headers@file"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    networks:
+      - internal
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-n8n}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-n8n_password}
+      - POSTGRES_DB=${POSTGRES_DB:-n8n}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-n8n}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Internal only - no external access
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    networks:
+      - external
+      - internal
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-n8n}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD:-n8n_password}
+      - N8N_HOST=n8n.1sourcesystems.com.au
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.1sourcesystems.com.au/
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=1sourcesystems-ai-lab_external"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.1sourcesystems.com.au`)"
+      - "traefik.http.routers.n8n.middlewares=secure-headers@file"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    networks:
+      - external
+      - internal
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=1sourcesystems-ai-lab_external"
+      - "traefik.http.routers.adminer.entrypoints=websecure"
+      - "traefik.http.routers.adminer.rule=Host(`db.1sourcesystems.com.au`)"
+      - "traefik.http.routers.adminer.middlewares=secure-headers@file"
+      - "traefik.http.services.adminer.loadbalancer.server.port=8080"
+
+  cloudflare-ddns:
+    image: oznu/cloudflare-ddns:latest
+    container_name: cloudflare-ddns
+    restart: unless-stopped
+    environment:
+      - API_KEY=${CF_DNS_API_TOKEN}
+      - ZONE=${DOMAIN:-1sourcesystems.com.au}
+      - SUBDOMAIN=@
+      - PROXIED=false
+      - RRTYPE=A
+      - DELETE_ON_STOP=false
+      - DNS_SERVER=1.1.1.1
+
+networks:
+  external:
+    name: 1sourcesystems-ai-lab_external
+    driver: bridge
+  internal:
+    name: 1sourcesystems-ai-lab_internal
+    driver: bridge
+    internal: true
+
+volumes:
+  ollama_data:
+  open_webui_data:
+  portainer_data:
+  postgres_data:
+  n8n_data:
