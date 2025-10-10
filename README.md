@@ -1,6 +1,37 @@
-# 1SourceSystems AI Lab - Docker Infrastructure
+# 1SourceSystems Web - Docker Infrastructure
 
-This setup provides a complete AI and automation infrastructure with **Cloudflare Tunnel** for secure access, external and internal network segmentation, and automatic SSL via Cloudflare.
+This setup provides a complete web application infrastructure with **Cloudflare Tunnel** for secure access, external and internal network segmentation, and automatic SSL via Cloudflare.
+
+## Project Structure
+
+The infrastructure is organized into modular service stacks:
+
+```
+1SourceSystems-Web/
+├── docker-compose.yml          # Main orchestrator (uses 'include' directive)
+├── start.sh                    # Intelligent startup script
+├── stop.sh                     # Graceful shutdown script
+├── .env                        # Environment variables (not committed)
+├── .env.example                # Environment template
+│
+├── traefik/                    # Reverse proxy stack
+│   ├── docker-compose.yml
+│   ├── traefik.yml            # Traefik configuration
+│   ├── dynamic.yml            # Dynamic configuration
+│   └── certs/                 # SSL certificates
+│
+├── db/                         # Database stack
+│   └── docker-compose.yml     # PostgreSQL + Adminer
+│
+├── ai/                         # AI services stack
+│   └── docker-compose.yml     # n8n, Ollama, Open-WebUI
+│
+├── portainer/                  # Container management
+│   └── docker-compose.yml
+│
+└── cloudflare/                 # Cloudflare services
+    └── docker-compose.yml     # DDNS + Tunnel
+```
 
 ## Architecture Overview
 
@@ -59,7 +90,7 @@ User → Cloudflare (HTTPS) → Tunnel → Docker Network → Traefik (HTTP) →
 ```bash
 # Clone the repository
 git clone <your-repo>
-cd 1SourceSystems-AI-Lab
+cd 1SourceSystems-Web
 
 # Copy environment template
 cp .env.example .env
@@ -87,7 +118,7 @@ The DDNS service keeps a staging subdomain updated with your IP (useful for dire
 2. Navigate to **Networks** → **Tunnels**
 3. Click **Create a tunnel**
 4. Select **Cloudflared** connector type
-5. Name your tunnel (e.g., `1sourcesystems-ai-lab`)
+5. Name your tunnel (e.g., `1sourcesystems-web`)
 6. Click **Save tunnel**
 7. **Copy the tunnel token** from the setup instructions
 8. Add token to `.env` as `TUNNEL_TOKEN=your-token-here`
@@ -138,15 +169,28 @@ Update these files with your domain:
 
 #### 7. Launch Services
 
+**Recommended: Use the startup script**
+```bash
+# Start all services in correct dependency order
+./start.sh
+```
+
+The script will:
+- Create networks and volumes
+- Start services in the correct order (Traefik → DB → AI → Portainer → Cloudflare)
+- Wait for PostgreSQL to be healthy before starting dependent services
+- Display status and service URLs
+
+**Alternative: Manual startup**
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # Check tunnel status
 docker logs cloudflared
 
 # Check all services
-docker-compose ps
+docker compose ps
 ```
 
 Look for in cloudflared logs:
@@ -299,28 +343,49 @@ Login credentials:
 
 ## Useful Commands
 
+### Service Management
+
 ```bash
+# Start all services (recommended)
+./start.sh
+
+# Stop all services (graceful shutdown)
+./stop.sh
+
+# Start specific service stack
+docker compose -f traefik/docker-compose.yml up -d
+docker compose -f ai/docker-compose.yml up -d
+docker compose -f db/docker-compose.yml up -d
+
+# Stop specific service stack
+docker compose -f ai/docker-compose.yml down
+
 # View all running containers
-docker-compose ps
+docker compose ps
 
 # View logs for a specific service
-docker-compose logs -f <service-name>
+docker compose logs -f <service-name>
 
 # View tunnel status
 docker logs cloudflared -f
 
 # Restart a specific service
-docker-compose restart <service-name>
+docker compose restart <service-name>
 
-# Stop all services
-docker-compose down
+# Stop all services and remove networks/volumes
+docker compose down --volumes
+```
 
-# Start all services
-docker-compose up -d
+### Updates and Maintenance
 
+```bash
 # Update all services to latest images
-docker-compose pull
-docker-compose up -d
+docker compose pull
+docker compose up -d
+
+# Update specific stack
+docker compose -f ai/docker-compose.yml pull
+docker compose -f ai/docker-compose.yml up -d
 
 # Check tunnel connectivity
 docker exec cloudflared cloudflared tunnel info
@@ -392,9 +457,43 @@ The `.gitignore` file protects:
 
 Always use `.env.example` as a template for new setups.
 
+## Managing Individual Stacks
+
+The modular structure allows you to manage services independently:
+
+### Traefik (Reverse Proxy)
+```bash
+cd traefik
+docker compose up -d
+docker compose logs -f
+```
+
+### Database Services
+```bash
+cd db
+docker compose up -d
+docker compose logs -f postgres
+```
+
+### AI Services
+```bash
+cd ai
+docker compose up -d
+docker compose logs -f ollama
+```
+
+### Benefits of Modular Structure
+- **Independent Updates**: Update one stack without affecting others
+- **Easier Debugging**: Focus on specific service stack
+- **Better Organization**: Related services grouped together
+- **Flexible Deployment**: Deploy only what you need
+- **Cleaner Configuration**: Each stack has its own focused compose file
+
 ## Additional Documentation
 
+- [QUICK_START.md](QUICK_START.md) - Quick start guide
 - [CLOUDFLARE_TUNNEL_SETUP.md](CLOUDFLARE_TUNNEL_SETUP.md) - Detailed tunnel setup guide
+- [NETWORK_DIAGRAM.md](NETWORK_DIAGRAM.md) - Network architecture diagrams
 - [.env.example](.env.example) - Environment variables template
 
 ## Support

@@ -1,0 +1,32 @@
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    networks:
+      - external
+      - internal
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=1sourcesystems-web_external"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.1sourcesystems.com.au`)"
+      - "traefik.http.routers.portainer.tls=true"
+      - "traefik.http.routers.portainer.middlewares=secure-headers@file"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+
+networks:
+  external:
+    external: true
+    name: 1sourcesystems-web_external
+  internal:
+    external: true
+    name: 1sourcesystems-web_internal
+
+volumes:
+  portainer_data:
+    name: 1sourcesystems-web_portainer_data
+    external: true

@@ -1,3 +1,8 @@
+# This file has been updated to correctly work with a Cloudflare Tunnel.
+# Each public-facing service now has two routers:
+# 1. An HTTP router that permanently redirects to HTTPS.
+# 2. An HTTPS router that handles the secure traffic.
+
 services:
   traefik:
     image: traefik:v3.0
@@ -21,10 +26,16 @@ services:
       - ./traefik/logs:/var/log/traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.entrypoints=web"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.1sourcesystems.com.au`)"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.middlewares=secure-headers@file"
+      # HTTP Router for Redirect
+      - "traefik.http.routers.traefik-http.entrypoints=web"
+      - "traefik.http.routers.traefik-http.rule=Host(`traefik.1sourcesystems.com.au`)"
+      - "traefik.http.routers.traefik-http.middlewares=https-redirect@file"
+      # HTTPS Router
+      - "traefik.http.routers.traefik-https.entrypoints=websecure"
+      - "traefik.http.routers.traefik-https.rule=Host(`traefik.1sourcesystems.com.au`)"
+      - "traefik.http.routers.traefik-https.tls=true"
+      - "traefik.http.routers.traefik-https.service=api@internal"
+      - "traefik.http.routers.traefik-https.middlewares=secure-headers@file"
 
   ollama:
     image: ollama/ollama:latest
@@ -37,7 +48,6 @@ services:
     restart: unless-stopped
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-    # Internal only - no external access
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
@@ -54,10 +64,16 @@ services:
       - ollama
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=1sourcesystems-ai-lab_external"
-      - "traefik.http.routers.open-webui.entrypoints=web"
-      - "traefik.http.routers.open-webui.rule=Host(`ai.1sourcesystems.com.au`)"
-      - "traefik.http.routers.open-webui.middlewares=secure-headers@file"
+      - "traefik.docker.network=1sourcesystems-web_external"
+      # HTTP Router
+      - "traefik.http.routers.open-webui-http.entrypoints=web"
+      - "traefik.http.routers.open-webui-http.rule=Host(`ai.1sourcesystems.com.au`)"
+      - "traefik.http.routers.open-webui-http.middlewares=https-redirect@file"
+      # HTTPS Router
+      - "traefik.http.routers.open-webui-https.entrypoints=websecure"
+      - "traefik.http.routers.open-webui-https.rule=Host(`ai.1sourcesystems.com.au`)"
+      - "traefik.http.routers.open-webui-https.tls=true"
+      - "traefik.http.routers.open-webui-https.middlewares=secure-headers@file"
       - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
 
   portainer:
@@ -72,10 +88,16 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=1sourcesystems-ai-lab_external"
-      - "traefik.http.routers.portainer.entrypoints=web"
-      - "traefik.http.routers.portainer.rule=Host(`portainer.1sourcesystems.com.au`)"
-      - "traefik.http.routers.portainer.middlewares=secure-headers@file"
+      - "traefik.docker.network=1sourcesystems-web_external"
+      # HTTP Router
+      - "traefik.http.routers.portainer-http.entrypoints=web"
+      - "traefik.http.routers.portainer-http.rule=Host(`portainer.1sourcesystems.com.au`)"
+      - "traefik.http.routers.portainer-http.middlewares=https-redirect@file"
+      # HTTPS Router
+      - "traefik.http.routers.portainer-https.entrypoints=websecure"
+      - "traefik.http.routers.portainer-https.rule=Host(`portainer.1sourcesystems.com.au`)"
+      - "traefik.http.routers.portainer-https.tls=true"
+      - "traefik.http.routers.portainer-https.middlewares=secure-headers@file"
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
 
   postgres:
@@ -84,7 +106,7 @@ services:
     networks:
       - internal
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-n8n}
+      - POSTGRES_USER=${POSTG_RES_USER:-n8n}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-n8n_password}
       - POSTGRES_DB=${POSTGRES_DB:-n8n}
     volumes:
@@ -95,7 +117,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    # Internal only - no external access
 
   n8n:
     image: n8nio/n8n:latest
@@ -122,10 +143,16 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=1sourcesystems-ai-lab_external"
-      - "traefik.http.routers.n8n.entrypoints=web"
-      - "traefik.http.routers.n8n.rule=Host(`n8n.1sourcesystems.com.au`)"
-      - "traefik.http.routers.n8n.middlewares=secure-headers@file"
+      - "traefik.docker.network=1sourcesystems-web_external"
+      # HTTP Router
+      - "traefik.http.routers.n8n-http.entrypoints=web"
+      - "traefik.http.routers.n8n-http.rule=Host(`n8n.1sourcesystems.com.au`)"
+      - "traefik.http.routers.n8n-http.middlewares=https-redirect@file"
+      # HTTPS Router
+      - "traefik.http.routers.n8n-https.entrypoints=websecure"
+      - "traefik.http.routers.n8n-https.rule=Host(`n8n.1sourcesystems.com.au`)"
+      - "traefik.http.routers.n8n-https.tls=true"
+      - "traefik.http.routers.n8n-https.middlewares=secure-headers@file"
       - "traefik.http.services.n8n.loadbalancer.server.port=5678"
 
   adminer:
@@ -141,10 +168,16 @@ services:
       - postgres
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=1sourcesystems-ai-lab_external"
-      - "traefik.http.routers.adminer.entrypoints=web"
-      - "traefik.http.routers.adminer.rule=Host(`db.1sourcesystems.com.au`)"
-      - "traefik.http.routers.adminer.middlewares=secure-headers@file"
+      - "traefik.docker.network=1sourcesystems-web_external"
+      # HTTP Router
+      - "traefik.http.routers.adminer-http.entrypoints=web"
+      - "traefik.http.routers.adminer-http.rule=Host(`db.1sourcesystems.com.au`)"
+      - "traefik.http.routers.adminer-http.middlewares=https-redirect@file"
+      # HTTPS Router
+      - "traefik.http.routers.adminer-https.entrypoints=websecure"
+      - "traefik.http.routers.adminer-https.rule=Host(`db.1sourcesystems.com.au`)"
+      - "traefik.http.routers.adminer-https.tls=true"
+      - "traefik.http.routers.adminer-https.middlewares=secure-headers@file"
       - "traefik.http.services.adminer.loadbalancer.server.port=8080"
 
   cloudflare-ddns:
@@ -169,10 +202,6 @@ services:
       - external
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-    # Alternative: use config file instead of token
-    # volumes:
-    #   - ./cloudflared:/etc/cloudflared
-    # command: tunnel --config /etc/cloudflared/config.yml run
 
 networks:
   external:
@@ -187,3 +216,4 @@ volumes:
   portainer_data:
   postgres_data:
   n8n_data:
+

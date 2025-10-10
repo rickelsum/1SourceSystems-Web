@@ -22,7 +22,7 @@ Cloudflare Tunnel creates a secure outbound-only connection from your server to 
 2. **Create a New Tunnel:**
    - Click **"Create a tunnel"**
    - Choose **"Cloudflared"** as the connector type
-   - Name your tunnel (e.g., `1sourcesystems-ai-lab`)
+   - Name your tunnel (e.g., `1sourcesystems-web`)
    - Click **"Save tunnel"**
 
 3. **Get Your Tunnel Token:**

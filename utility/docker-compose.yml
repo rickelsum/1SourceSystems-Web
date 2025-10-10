@@ -1,0 +1,15 @@
+services:
+  health-check:
+    image: alpine:latest
+    container_name: health-check
+    networks:
+      - external
+    volumes:
+      - ./health-check.sh:/health-check.sh:ro
+    command: sh /health-check.sh
+    restart: "no"
+
+networks:
+  external:
+    external: true
+    name: 1sourcesystems-web_external

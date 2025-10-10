@@ -1,0 +1,32 @@
+services:
+  cloudflare-ddns:
+    image: oznu/cloudflare-ddns:latest
+    container_name: cloudflare-ddns
+    restart: unless-stopped
+    environment:
+      - API_KEY=${CF_DNS_API_TOKEN}
+      - ZONE=${DOMAIN:-1sourcesystems.com.au}
+      - SUBDOMAIN=staging
+      - PROXIED=true
+      - RRTYPE=A
+      - DELETE_ON_STOP=false
+      - DNS_SERVER=1.1.1.1
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    networks:
+      - external
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    # Alternative: use config file instead of token
+    # volumes:
+    #   - ./cloudflared:/etc/cloudflared
+    # command: tunnel --config /etc/cloudflared/config.yml run
+
+networks:
+  external:
+    external: true
+    name: 1sourcesystems-web_external

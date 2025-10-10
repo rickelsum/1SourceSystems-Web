@@ -1,24 +1,31 @@
-# Dynamic configuration for Traefik
+# This file configures Traefik's dynamic behavior, including middlewares and TLS certificates.
+
 http:
   middlewares:
-    # Security headers
+    # 1. Middleware to redirect all HTTP traffic to HTTPS
+    https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+    # 2. Merged secure headers from both configurations
     secure-headers:
       headers:
-        sslRedirect: false
-        forceSTSHeader: false
-        stsIncludeSubdomains: false
-        stsPreload: false
-        customResponseHeaders:
-          X-Frame-Options: "SAMEORIGIN"
-          X-Content-Type-Options: "nosniff"
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentTypeNosniff: true
+        browserXssFilter: true
 
-    # Rate limiting
+    # 3. Rate limiting from your existing configuration
     rate-limit:
       rateLimit:
         average: 100
         burst: 50
 
-    # IP whitelist for internal services (optional - uncomment and configure)
+    # 4. IP whitelist for internal services (from your existing config)
     # internal-only:
     #   ipWhiteList:
     #     sourceRange:
@@ -26,6 +33,7 @@ http:
     #       - "10.0.0.0/8"
     #       - "172.16.0.0/12"
 
+# 5. Your advanced TLS configuration
 tls:
   certificates:
     - certFile: /etc/traefik/certs/origin-cert.pem
@@ -46,3 +54,4 @@ tls:
         - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
         - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
         - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+

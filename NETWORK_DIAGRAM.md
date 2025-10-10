@@ -1,5 +1,23 @@
 # Network Architecture Diagram
 
+## Project Organization
+
+The infrastructure uses a **modular Docker Compose structure** with services organized into logical stacks:
+
+```
+1SourceSystems-Web/
+├── docker-compose.yml      # Main orchestrator
+├── start.sh               # Intelligent startup
+├── stop.sh                # Graceful shutdown
+├── traefik/               # Reverse proxy stack
+├── db/                    # Database stack
+├── ai/                    # AI services stack
+├── portainer/             # Management stack
+└── cloudflare/            # Cloudflare services
+```
+
+Each stack has its own `docker-compose.yml` and can be managed independently.
+
 ## High-Level Overview
 
 ```
@@ -246,35 +264,56 @@
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Container Dependencies
+## Container Dependencies & Startup Order
+
+The `start.sh` script ensures services start in the correct order:
 
 ```
-                    ┌──────────────┐
-                    │   traefik    │
-                    │ (Must start  │
-                    │   first)     │
-                    └──────┬───────┘
-                           │
-          ┌────────────────┼────────────────┐
-          │                │                │
-    ┌─────▼─────┐    ┌────▼────┐    ┌─────▼─────┐
-    │  postgres │    │ ollama  │    │ portainer │
-    │ (health   │    │         │    │           │
-    │  check)   │    │         │    │           │
-    └─────┬─────┘    └────┬────┘    └───────────┘
-          │               │
-    ┌─────▼─────┐    ┌────▼────────┐
-    │    n8n    │    │ open-webui  │
-    │  (waits   │    │  (needs     │
-    │  for DB)  │    │  ollama)    │
-    └───────────┘    └─────────────┘
-          │
-    ┌─────▼─────┐
-    │  adminer  │
-    │  (waits   │
-    │  for DB)  │
-    └───────────┘
+Step 1: Networks & Volumes
+          (Created by main docker-compose.yml)
+                    │
+                    ▼
+Step 2:       ┌──────────────┐
+              │   traefik/   │
+              │   traefik    │ ← Must start first (reverse proxy)
+              └──────┬───────┘
+                     │
+          ┌──────────┴──────────┐
+          ▼                     ▼
+Step 3: ┌──────┐          ┌──────────┐
+        │ db/  │          │          │
+        │postgres│        │          │
+        │(waits for       │          │
+        │ health)│        │          │
+        └──┬───┘          │          │
+           │              │          │
+Step 4:    ▼              ▼          ▼
+      ┌─────────┐   ┌──────────┐  ┌──────────┐
+      │  ai/    │   │ai/       │  │portainer/│
+      │  n8n    │   │ollama    │  │portainer │
+      │(needs DB)│  │          │  │          │
+      └─────────┘   └────┬─────┘  └──────────┘
+                         │
+                    ┌────▼─────┐
+                    │   ai/    │
+                    │open-webui│
+                    │(needs    │
+                    │ ollama)  │
+                    └──────────┘
+
+Step 5:              ┌──────────────┐
+                     │ cloudflare/  │
+                     │cloudflared   │
+                     │cloudflare-   │
+                     │   ddns       │
+                     └──────────────┘
 ```
+
+**Startup Script Benefits:**
+- Waits for PostgreSQL health check
+- Ensures Traefik is ready before dependent services
+- Color-coded progress output
+- Final status verification
 
 ## Summary
 
@@ -298,3 +337,49 @@
 - No direct container exposure
 - Automatic certificate renewal
 - Rate limiting available
+
+## Managing Individual Stacks
+
+### Using the Orchestrator
+
+```bash
+# Start all services with proper ordering
+./start.sh
+
+# Stop all services gracefully
+./stop.sh
+
+# Or use docker compose from root
+docker compose up -d
+docker compose down
+```
+
+### Managing Individual Stacks
+
+Each stack can be managed independently:
+
+```bash
+# Traefik stack
+cd traefik && docker compose up -d
+
+# Database stack
+cd db && docker compose up -d
+
+# AI services stack
+cd ai && docker compose up -d
+
+# Portainer stack
+cd portainer && docker compose up -d
+
+# Cloudflare stack
+cd cloudflare && docker compose up -d
+```
+
+### Benefits of Modular Architecture
+
+1. **Independent Updates**: Update AI services without touching database
+2. **Easier Debugging**: Focus logs and troubleshooting on specific stack
+3. **Flexible Deployment**: Deploy only needed services
+4. **Better Organization**: Related services grouped logically
+5. **Cleaner Configuration**: Each stack has focused, readable compose file
+6. **Team Collaboration**: Different team members can own different stacks

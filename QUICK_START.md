@@ -1,64 +1,69 @@
-# Quick Start Guide - 1SourceSystems AI Lab
+# Quick Start Guide - 1SourceSystems Web
 
 ## TL;DR - Get Running in 10 Minutes
 
+This guide covers setup with **Cloudflare Tunnel** (recommended) for zero port forwarding.
+
 ### Step 1: Create Environment File (2 min)
 ```bash
-cd /home/rick/Workspaces/Source/1SourceSystems-AI-Lab
+git clone <your-repo>
+cd 1SourceSystems-Web
 cp .env.example .env
 nano .env
 ```
 
 Fill in:
-- `CF_API_EMAIL`: Your Cloudflare email
-- `CF_DNS_API_TOKEN`: Get from https://dash.cloudflare.com/profile/api-tokens
+- `TUNNEL_TOKEN`: Get from Cloudflare Zero Trust (see step 2)
+- `CF_DNS_API_TOKEN`: Optional - for DDNS (staging subdomain)
 - `POSTGRES_PASSWORD`: Choose a strong password
+- `DOMAIN`: Your domain (e.g., 1sourcesystems.com.au)
 
-### Step 2: Configure Cloudflare DNS (3 min)
+### Step 2: Create Cloudflare Tunnel (3 min)
 
-Go to Cloudflare DNS for `1sourcesystems.com.au`:
+1. Go to [Cloudflare Zero Trust](https://one.dash.cloudflare.com/)
+2. Navigate to **Networks** → **Tunnels**
+3. Click **Create a tunnel**
+4. Name it (e.g., `1sourcesystems-web`)
+5. **Copy the tunnel token**
+6. Add to `.env`: `TUNNEL_TOKEN=your-token-here`
 
-1. **A Record** (your main domain):
-   - Type: `A`
-   - Name: `@`
-   - Content: `<your-current-public-ip>` (get from https://ifconfig.me)
-   - Proxy: **OFF** (grey cloud)
+### Step 3: Configure Public Hostnames (2 min)
 
-2. **CNAME Records** (one for each service):
-   ```
-   ai        →  1sourcesystems.com.au  (Proxy: OFF)
-   portainer →  1sourcesystems.com.au  (Proxy: OFF)
-   n8n       →  1sourcesystems.com.au  (Proxy: OFF)
-   db        →  1sourcesystems.com.au  (Proxy: OFF)
-   traefik   →  1sourcesystems.com.au  (Proxy: OFF)
-   ```
+In Cloudflare Tunnel dashboard, add these routes (all point to `http://traefik:80`):
 
-### Step 3: Configure Firewall & Router (2 min)
+| Public Hostname | Service | URL |
+|----------------|---------|-----|
+| ai.yourdomain.com | HTTP | `traefik:80` |
+| portainer.yourdomain.com | HTTP | `traefik:80` |
+| n8n.yourdomain.com | HTTP | `traefik:80` |
+| db.yourdomain.com | HTTP | `traefik:80` |
+| traefik.yourdomain.com | HTTP | `traefik:80` |
 
-**On Server:**
+**Note**: DNS records are created automatically!
+
+### Step 4: Get Origin Certificates (2 min)
+
+1. Cloudflare Dashboard → **SSL/TLS** → **Origin Server**
+2. Click **Create Certificate**
+3. Save as:
+   - `traefik/certs/origin-cert.pem`
+   - `traefik/certs/origin-key.pem`
+
+### Step 5: Launch! (1 min)
 ```bash
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw reload
+# Recommended: Use the startup script
+./start.sh
 ```
 
-**On Router:**
-- Forward port `80` → your server's local IP
-- Forward port `443` → your server's local IP
+The script automatically:
+- Creates networks and volumes
+- Starts services in correct order
+- Waits for dependencies (e.g., PostgreSQL health check)
+- Shows service status and URLs
 
-📖 **Need help with router setup?** See [ROUTER_SETUP.md](ROUTER_SETUP.md) for detailed step-by-step instructions for common Australian ISP routers (Telstra, Optus, TPG, etc.)
+### Step 6: Access Your Services
 
-### Step 4: Launch! (3 min)
-```bash
-sudo docker-compose up -d
-sudo docker-compose logs -f traefik
-```
-
-Wait for "acme: Certificate obtained" message (1-2 minutes)
-
-### Step 5: Access Your Services
-
-After 5-10 minutes (DNS propagation):
+Immediately available (no DNS propagation wait!):
 
 - 🤖 **AI Chat**: https://ai.1sourcesystems.com.au
 - 🐳 **Container Mgmt**: https://portainer.1sourcesystems.com.au
@@ -66,50 +71,67 @@ After 5-10 minutes (DNS propagation):
 - 🗄️ **Database Admin**: https://db.1sourcesystems.com.au
 - 📊 **Traefik Dashboard**: https://traefik.1sourcesystems.com.au
 
-## Dynamic IP? No Problem! ✅
+## Why Cloudflare Tunnel? ✅
 
-The `cloudflare-ddns` container automatically updates your DNS when your IP changes. Zero manual work!
+- ✅ No port forwarding needed
+- ✅ Works behind any firewall/NAT
+- ✅ No exposed server IP
+- ✅ Built-in DDoS protection
+- ✅ Free SSL/TLS
+- ✅ Works with ISP port blocking
 
 ## Troubleshooting
 
-### Can't access services after 10 minutes?
+### Can't access services?
 
 ```bash
 # Check all containers running
-sudo docker-compose ps
+docker compose ps
 
-# Check Traefik logs for SSL certificate
-sudo docker-compose logs traefik | grep -i acme
+# Check tunnel status
+docker logs cloudflared
 
-# Check DDNS is updating your IP
-sudo docker-compose logs cloudflare-ddns
+# Check Traefik logs
+docker logs traefik
 
-# Verify DNS
-dig ai.1sourcesystems.com.au
+# Verify tunnel in Cloudflare dashboard
+# Should show "HEALTHY" status
 ```
 
-### Ports blocked by ISP?
+### 502 Bad Gateway?
 
-If your ISP blocks ports 80/443, see README.md for Cloudflare Tunnel alternative.
+1. Ensure Traefik is running: `docker ps | grep traefik`
+2. Check public hostname routes in Cloudflare
+3. Verify all routes point to `http://traefik:80`
 
-### SSL certificate not generating?
+### Tunnel not connecting?
 
-1. Verify Cloudflare API token has "Edit zone DNS" permission
-2. Ensure DNS records have Proxy **OFF** (grey cloud)
-3. Check `traefik/letsencrypt/acme.json` permissions: `chmod 600`
+1. Verify `TUNNEL_TOKEN` in `.env` is correct
+2. Check tunnel logs: `docker logs cloudflared`
+3. Ensure container can reach internet
 
 ## What's Running?
 
-| Service | Purpose | Network |
-|---------|---------|---------|
-| **traefik** | Reverse proxy & SSL | Both |
-| **cloudflare-ddns** | Auto-update DNS | - |
-| **ollama** | AI models (Llama, etc) | Internal only |
-| **open-webui** | Chat interface | External |
-| **portainer** | Docker management UI | External |
-| **postgres** | Database for n8n | Internal only |
-| **n8n** | Workflow automation | External |
-| **adminer** | Database admin UI | External |
+### Service Organization
+
+**Traefik Stack** (`traefik/`)
+- Reverse proxy with SSL/TLS termination
+
+**Database Stack** (`db/`)
+- PostgreSQL (internal only)
+- Adminer (database admin UI)
+
+**AI Stack** (`ai/`)
+- Ollama (AI models - internal only)
+- Open-WebUI (chat interface)
+- n8n (workflow automation)
+
+**Management Stack** (`portainer/`)
+- Portainer (container management)
+
+**Cloudflare Stack** (`cloudflare/`)
+- Cloudflare Tunnel (secure access)
+- Cloudflare DDNS (optional - staging subdomain)
 
 ## Security Notes
 
@@ -119,6 +141,30 @@ If your ISP blocks ports 80/443, see README.md for Cloudflare Tunnel alternative
 
 🌐 **External Network Services** (accessible via HTTPS):
 - Everything else (protected by SSL + security headers)
+
+## Managing Services
+
+### Start/Stop Commands
+
+```bash
+# Start all services (recommended)
+./start.sh
+
+# Stop all services
+./stop.sh
+
+# Start specific stack
+docker compose -f ai/docker-compose.yml up -d
+
+# Stop specific stack
+docker compose -f ai/docker-compose.yml down
+
+# View logs
+docker compose logs -f <service-name>
+
+# Update services
+docker compose pull && docker compose up -d
+```
 
 ## Next Steps
 
@@ -130,9 +176,7 @@ If your ISP blocks ports 80/443, see README.md for Cloudflare Tunnel alternative
 
 ## Need Help?
 
-See full documentation in [README.md](README.md)
-
-Common issues:
-- **DNS not resolving**: Wait 10 minutes for propagation
-- **SSL errors**: Check Cloudflare API token and DNS proxy settings
-- **Port forwarding issues**: Test with `nc -zv <your-ip> 80`
+See full documentation:
+- [README.md](README.md) - Complete documentation
+- [CLOUDFLARE_TUNNEL_SETUP.md](CLOUDFLARE_TUNNEL_SETUP.md) - Detailed tunnel setup
+- [NETWORK_DIAGRAM.md](NETWORK_DIAGRAM.md) - Architecture diagrams
