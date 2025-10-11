@@ -29,8 +29,17 @@ The infrastructure is organized into modular service stacks:
 ├── portainer/                  # Container management
 │   └── docker-compose.yml
 │
-└── cloudflare/                 # Cloudflare services
-    └── docker-compose.yml     # DDNS + Tunnel
+├── cloudflare/                 # Cloudflare services
+│   └── docker-compose.yml     # DDNS + Tunnel
+│
+├── twingate/                   # Zero Trust network access
+│   ├── docker-compose.yml
+│   └── README.md              # Twingate setup guide
+│
+└── rustdesk/                   # Self-hosted remote desktop
+    ├── docker-compose.yml
+    ├── README.md              # RustDesk setup guide
+    └── data/                  # Encryption keys (auto-generated)
 ```
 
 ## Architecture Overview
@@ -44,10 +53,14 @@ The infrastructure is organized into modular service stacks:
 - n8n (workflow automation)
 - Adminer (database admin)
 - Cloudflared (Cloudflare Tunnel connector)
+- Twingate Connector (Zero Trust network access)
+- RustDesk Server (remote desktop server)
 
 **Internal Network** (only accessible between containers):
 - Ollama (AI model backend)
 - PostgreSQL (database)
+- Twingate Connector (can access internal services)
+- RustDesk Server (can access internal services)
 
 ### How Cloudflare Tunnel Works
 
@@ -65,15 +78,20 @@ User → Cloudflare (HTTPS) → Tunnel → Docker Network → Traefik (HTTP) →
 
 ## Services & Access URLs
 
-| Service | URL | Access | Purpose |
-|---------|-----|--------|---------|
+| Service | URL/Access | Type | Purpose |
+|---------|------------|------|---------|
+| **Public Services (via Cloudflare Tunnel)** ||||
 | Traefik Dashboard | https://traefik.1sourcesystems.com.au | External | Reverse proxy dashboard |
 | Open WebUI | https://ai.1sourcesystems.com.au | External | AI chat interface |
 | Portainer | https://portainer.1sourcesystems.com.au | External | Docker management |
 | n8n | https://n8n.1sourcesystems.com.au | External | Workflow automation |
 | Adminer | https://db.1sourcesystems.com.au | External | Database admin |
+| **Internal Services** ||||
 | Ollama | Internal only | Internal | AI model backend |
 | PostgreSQL | Internal only | Internal | Database |
+| **Remote Access Services** ||||
+| Twingate | Via client app | Zero Trust | Secure network access to entire lab |
+| RustDesk | Via client app | Remote Desktop | Graphical access to VMs |
 
 ## Quick Start
 
@@ -489,11 +507,107 @@ docker compose logs -f ollama
 - **Flexible Deployment**: Deploy only what you need
 - **Cleaner Configuration**: Each stack has its own focused compose file
 
+## Remote Access to Your Proxmox Lab
+
+This setup includes two complementary remote access solutions:
+
+### Twingate - Zero Trust Network Access
+
+**What it does**: Provides secure access to your entire Proxmox network from anywhere.
+
+**Use cases**:
+- Access Proxmox Web UI (`https://proxmox-ip:8006`)
+- SSH into Kali VM or any other VMs
+- Access internal Docker services (Ollama, PostgreSQL)
+- Manage your entire home lab infrastructure
+
+**How to set up**:
+1. See detailed guide: [twingate/README.md](twingate/README.md)
+2. Sign up at [twingate.com](https://twingate.com) (free tier available)
+3. Add tokens to `.env` file
+4. Start connector: Automatically started by `./start.sh`
+5. Install Twingate client on your Arch laptop
+6. Connect and access your entire lab!
+
+**Benefits**:
+- No port forwarding required
+- Works with CGNAT and mobile hotspots
+- Split tunneling (only lab traffic goes through tunnel)
+- Zero Trust security model
+- Access ANY device on your network
+
+### RustDesk - Self-Hosted Remote Desktop
+
+**What it does**: Provides graphical remote desktop access to your VMs.
+
+**Use cases**:
+- Remote desktop to Kali VM
+- Remote desktop to any other VMs you spin up
+- Full graphical interface access
+- File transfer between machines
+- Clipboard sharing
+
+**How to set up**:
+1. See detailed guide: [rustdesk/README.md](rustdesk/README.md)
+2. Start servers: Automatically started by `./start.sh`
+3. Get public key: `docker exec rustdesk-server cat /root/id_ed25519.pub`
+4. Install RustDesk client on VMs and your laptop
+5. Configure clients to use `192.168.1.11` as server
+6. Connect remotely!
+
+**Benefits**:
+- Self-hosted (your data stays private)
+- Open source and free
+- Cross-platform (Linux, Windows, macOS, Android, iOS)
+- High performance with low latency
+- Works seamlessly with Twingate
+
+### Combined Workflow: Complete Remote Lab Access
+
+**When away from home**:
+
+1. **Connect Twingate** on your Arch laptop
+   - Provides secure network access to your home lab
+
+2. **Access Proxmox Web UI** via browser
+   - `https://192.168.x.x:8006` - Manage VMs, start/stop services
+
+3. **Use RustDesk** for graphical access
+   - Remote desktop to Kali VM or any other VM
+   - Full GUI experience
+
+4. **Use SSH** for command-line access
+   - `ssh user@vm-ip` - Direct terminal access
+
+**All of this works seamlessly** - Twingate provides the network layer, RustDesk provides the desktop layer!
+
+### Twingate + Cloudflare Tunnel = Perfect Combo
+
+These three solutions work together perfectly:
+
+| Solution | Purpose | Use For |
+|----------|---------|---------|
+| **Cloudflare Tunnel** | Public web services | Open WebUI, n8n, Portainer (for public access) |
+| **Twingate** | Private infrastructure | Proxmox, VMs, SSH, internal Docker services |
+| **RustDesk** | Remote desktop | Graphical access to VMs (Kali, Windows, etc.) |
+
+**Example scenarios**:
+
+- **Public AI chatbot**: Use Cloudflare Tunnel → Anyone can access Open WebUI
+- **Manage Proxmox**: Use Twingate → Only you can access
+- **Work on Kali VM**: Use Twingate + RustDesk → Full desktop access
+- **SSH to a VM**: Use Twingate → Direct terminal access
+- **Access PostgreSQL**: Use Twingate → Connect to internal service
+
+All three run simultaneously without conflicts!
+
 ## Additional Documentation
 
 - [QUICK_START.md](QUICK_START.md) - Quick start guide
 - [CLOUDFLARE_TUNNEL_SETUP.md](CLOUDFLARE_TUNNEL_SETUP.md) - Detailed tunnel setup guide
 - [NETWORK_DIAGRAM.md](NETWORK_DIAGRAM.md) - Network architecture diagrams
+- [twingate/README.md](twingate/README.md) - **Twingate setup and usage guide**
+- [rustdesk/README.md](rustdesk/README.md) - **RustDesk setup and usage guide**
 - [.env.example](.env.example) - Environment variables template
 
 ## Support

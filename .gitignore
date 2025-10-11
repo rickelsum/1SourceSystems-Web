@@ -11,3 +11,11 @@ traefik/certs/*.key
 
 # Docker volumes data
 *_data/
+
+# RustDesk encryption keys (auto-generated)
+rustdesk/data/id_ed25519
+rustdesk/data/id_ed25519.pub
+rustdesk/data/*.db
+
+# Twingate configuration (contains secrets)
+twingate/.twingate/

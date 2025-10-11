@@ -1,0 +1,57 @@
+services:
+  # RustDesk ID/Rendezvous Server (hbbs)
+  # Handles client registration and peer discovery
+  rustdesk-server:
+    image: rustdesk/rustdesk-server:latest
+    container_name: rustdesk-server
+    command: hbbs -r ${RUSTDESK_RELAY_SERVER:-192.168.1.11:21117}
+    restart: unless-stopped
+    networks:
+      - external
+      - internal
+    ports:
+      # TCP ports for signaling
+      - "21115:21115"      # NAT type test
+      - "21116:21116/tcp"  # TCP hole punching
+      - "21116:21116/udp"  # UDP hole punching
+      - "21118:21118"      # Web client support
+    volumes:
+      - ./data:/root
+    environment:
+      # Optional: Set encryption key (will be auto-generated if not set)
+      - ENCRYPTED_ONLY=${RUSTDESK_ENCRYPTED_ONLY:-1}
+      # Optional: Relay server address
+      - RELAY=${RUSTDESK_RELAY_SERVER:-192.168.1.11:21117}
+    security_opt:
+      - no-new-privileges:true
+
+  # RustDesk Relay Server (hbbr)
+  # Handles relayed connections when direct P2P fails
+  rustdesk-relay:
+    image: rustdesk/rustdesk-server:latest
+    container_name: rustdesk-relay
+    command: hbbr
+    restart: unless-stopped
+    networks:
+      - external
+      - internal
+    ports:
+      - "21117:21117"      # Relay server port
+      - "21119:21119"      # Web client relay support
+    volumes:
+      - ./data:/root
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      - rustdesk-server
+
+networks:
+  external:
+    external: true
+    name: 1sourcesystems-web_external
+  internal:
+    external: true
+    name: 1sourcesystems-web_internal
+
+# Note: The shared volume ensures both containers use the same encryption keys
+# Keys are generated automatically on first run in ./data directory

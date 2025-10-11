@@ -100,8 +100,28 @@ docker compose -f cloudflare/docker-compose.yml up -d --remove-orphans
 print_success "Cloudflare services started"
 echo ""
 
-# Step 7: Run Health Checks
-print_info "Step 7: Running health checks on all services..."
+# Step 7: Start Twingate connector (Zero Trust network access)
+print_info "Step 7: Starting Twingate connector..."
+if [ -f "twingate/docker-compose.yml" ]; then
+    docker compose -f twingate/docker-compose.yml up -d --remove-orphans
+    print_success "Twingate connector started"
+else
+    print_warning "Twingate not configured (twingate/docker-compose.yml not found)"
+fi
+echo ""
+
+# Step 8: Start RustDesk server (Remote desktop)
+print_info "Step 8: Starting RustDesk server..."
+if [ -f "rustdesk/docker-compose.yml" ]; then
+    docker compose -f rustdesk/docker-compose.yml up -d --remove-orphans
+    print_success "RustDesk server started"
+else
+    print_warning "RustDesk not configured (rustdesk/docker-compose.yml not found)"
+fi
+echo ""
+
+# Step 9: Run Health Checks
+print_info "Step 9: Running health checks on all services..."
 echo ""
 docker compose -f utility/docker-compose.yml run --rm health-check
 

@@ -48,32 +48,52 @@ echo ""
 
 # Stop services in reverse order of dependencies
 
-# Step 1: Stop Cloudflare services (no dependencies)
-print_info "Step 1: Stopping Cloudflare services..."
+# Step 1: Stop RustDesk server (no dependencies)
+print_info "Step 1: Stopping RustDesk server..."
+if [ -f "rustdesk/docker-compose.yml" ]; then
+    docker compose -f rustdesk/docker-compose.yml down
+    print_success "RustDesk server stopped"
+else
+    print_warning "RustDesk not configured (skipping)"
+fi
+echo ""
+
+# Step 2: Stop Twingate connector (no dependencies)
+print_info "Step 2: Stopping Twingate connector..."
+if [ -f "twingate/docker-compose.yml" ]; then
+    docker compose -f twingate/docker-compose.yml down
+    print_success "Twingate connector stopped"
+else
+    print_warning "Twingate not configured (skipping)"
+fi
+echo ""
+
+# Step 3: Stop Cloudflare services (no dependencies)
+print_info "Step 3: Stopping Cloudflare services..."
 docker compose -f cloudflare/docker-compose.yml down
 print_success "Cloudflare services stopped"
 echo ""
 
-# Step 2: Stop Portainer (no dependencies)
-print_info "Step 2: Stopping Portainer..."
+# Step 4: Stop Portainer (no dependencies)
+print_info "Step 4: Stopping Portainer..."
 docker compose -f portainer/docker-compose.yml down
 print_success "Portainer stopped"
 echo ""
 
-# Step 3: Stop AI services (depends on DB)
-print_info "Step 3: Stopping AI services (n8n, Ollama, Open-WebUI)..."
+# Step 5: Stop AI services (depends on DB)
+print_info "Step 5: Stopping AI services (n8n, Ollama, Open-WebUI)..."
 docker compose -f ai/docker-compose.yml down
 print_success "AI services stopped"
 echo ""
 
-# Step 4: Stop Database services
-print_info "Step 4: Stopping database services..."
+# Step 6: Stop Database services
+print_info "Step 6: Stopping database services..."
 docker compose -f db/docker-compose.yml down
 print_success "Database services stopped"
 echo ""
 
-# Step 5: Stop Traefik (reverse proxy - stop last)
-print_info "Step 5: Stopping Traefik..."
+# Step 7: Stop Traefik (reverse proxy - stop last)
+print_info "Step 7: Stopping Traefik..."
 docker compose -f traefik/docker-compose.yml down
 print_success "Traefik stopped"
 echo ""

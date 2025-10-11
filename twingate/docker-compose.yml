@@ -1,0 +1,41 @@
+services:
+  twingate-connector:
+    image: twingate/connector:latest
+    container_name: twingate-connector
+    restart: unless-stopped
+    networks:
+      - external
+      - internal
+    environment:
+      # IMPORTANT: Get these values from Twingate Admin Console
+      # https://[your-network].twingate.com/settings/connectors
+      # Click "Add Connector" -> "Generate Tokens"
+      - TWINGATE_ACCESS_TOKEN=${TWINGATE_ACCESS_TOKEN}
+      - TWINGATE_REFRESH_TOKEN=${TWINGATE_REFRESH_TOKEN}
+      - TWINGATE_NETWORK=${TWINGATE_NETWORK}
+
+      # Optional: Connector name for identification
+      - TWINGATE_LABEL_HOSTNAME=proxmox-docker-connector
+
+      # Optional: Enable debug logging
+      # - TWINGATE_LOG_LEVEL=7
+
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+
+    # Healthcheck to monitor connector status
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9999/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  external:
+    external: true
+    name: 1sourcesystems-web_external
+  internal:
+    external: true
+    name: 1sourcesystems-web_internal
