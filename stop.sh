@@ -74,26 +74,14 @@ docker compose -f cloudflare/docker-compose.yml down
 print_success "Cloudflare services stopped"
 echo ""
 
-# Step 4: Stop Portainer (no dependencies)
-print_info "Step 4: Stopping Portainer..."
-docker compose -f portainer/docker-compose.yml down
-print_success "Portainer stopped"
-echo ""
-
-# Step 5: Stop AI services (depends on DB)
-print_info "Step 5: Stopping AI services (n8n, Ollama, Open-WebUI)..."
-docker compose -f ai/docker-compose.yml down
-print_success "AI services stopped"
-echo ""
-
 # Step 6: Stop Database services
-print_info "Step 6: Stopping database services..."
+print_info "Step 4: Stopping database services..."
 docker compose -f db/docker-compose.yml down
 print_success "Database services stopped"
 echo ""
 
 # Step 7: Stop Traefik (reverse proxy - stop last)
-print_info "Step 7: Stopping Traefik..."
+print_info "Step 5: Stopping Traefik..."
 docker compose -f traefik/docker-compose.yml down
 print_success "Traefik stopped"
 echo ""

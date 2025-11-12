@@ -33,20 +33,8 @@ http:
     #       - "10.0.0.0/8"
     #       - "172.16.0.0/12"
 
-# 5. Your advanced TLS configuration
+# 5. TLS configuration - using ACME Let's Encrypt
 tls:
-  certificates:
-    - certFile: /etc/traefik/certs/origin-cert.pem
-      keyFile: /etc/traefik/certs/origin-key.pem
-      stores:
-        - default
-
-  stores:
-    default:
-      defaultCertificate:
-        certFile: /etc/traefik/certs/origin-cert.pem
-        keyFile: /etc/traefik/certs/origin-key.pem
-
   options:
     default:
       minVersion: VersionTLS12

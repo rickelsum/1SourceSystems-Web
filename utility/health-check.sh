@@ -77,18 +77,6 @@ print_info "Testing Traefik Dashboard..."
 test_service "traefik.1sourcesystems.com.au" "Traefik Dashboard" || all_passed=false
 
 echo ""
-print_info "Testing Portainer..."
-test_service "portainer.1sourcesystems.com.au" "Portainer" || all_passed=false
-
-echo ""
-print_info "Testing Database Admin (Adminer)..."
-test_service "db.1sourcesystems.com.au" "Adminer" || all_passed=false
-
-echo ""
-print_info "Testing AI Chat (Open-WebUI)..."
-test_service "ai.1sourcesystems.com.au" "Open-WebUI" || all_passed=false
-
-echo ""
 print_info "Testing n8n Automation..."
 test_service "n8n.1sourcesystems.com.au" "n8n" || all_passed=false
 
@@ -99,9 +87,7 @@ if [ "$all_passed" = true ]; then
     echo ""
     print_info "Service URLs:"
     echo "  • Traefik:   https://traefik.1sourcesystems.com.au"
-    echo "  • Portainer: https://portainer.1sourcesystems.com.au"
     echo "  • DB Admin:  https://db.1sourcesystems.com.au"
-    echo "  • AI Chat:   https://ai.1sourcesystems.com.au"
     echo "  • n8n:       https://n8n.1sourcesystems.com.au"
     echo ""
     exit 0

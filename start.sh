@@ -50,11 +50,10 @@ echo ""
 print_info "Step 1: Ensuring networks and volumes exist..."
 docker network create 1sourcesystems-web_external 2>/dev/null || true
 docker network create 1sourcesystems-web_internal 2>/dev/null || true
-docker volume create 1sourcesystems-web_ollama_data 2>/dev/null || true
-docker volume create 1sourcesystems-web_open_webui_data 2>/dev/null || true
-docker volume create 1sourcesystems-web_portainer_data 2>/dev/null || true
 docker volume create 1sourcesystems-web_postgres_data 2>/dev/null || true
 docker volume create 1sourcesystems-web_n8n_data 2>/dev/null || true
+docker volume create 1sourcesystems-web_ollama_data 2>/dev/null || true
+docker volume create 1sourcesystems-web_open_webui_data 2>/dev/null || true
 print_success "Networks and volumes ready"
 echo ""
 
@@ -82,26 +81,24 @@ timeout 30 bash -c 'until docker exec postgres pg_isready -U n8n &>/dev/null; do
 print_success "PostgreSQL is ready"
 echo ""
 
-# Step 4: Start AI services (Ollama, Open-WebUI, n8n)
-print_info "Step 4: Starting AI services (Ollama, Open-WebUI, n8n)..."
-docker compose -f ai/docker-compose.yml up -d --remove-orphans
-print_success "AI services started"
+# Step 4: Start AI services (n8n + Ollama + Open WebUI)
+print_info "Step 4: Starting AI services (n8n + Ollama + Open WebUI)..."
+if [ -f "ai/docker-compose.yml" ]; then
+    docker compose -f ai/docker-compose.yml up -d --remove-orphans
+    print_success "AI services started"
+else
+    print_warning "AI services not configured (ai/docker-compose.yml not found)"
+fi
 echo ""
 
-# Step 5: Start Portainer (container management)
-print_info "Step 5: Starting Portainer..."
-docker compose -f portainer/docker-compose.yml up -d --remove-orphans
-print_success "Portainer started"
-echo ""
-
-# Step 6: Start Cloudflare services (DDNS + Tunnel)
-print_info "Step 6: Starting Cloudflare services (DDNS + Tunnel)..."
+# Step 5: Start Cloudflare services (DDNS + Tunnel)
+print_info "Step 5: Starting Cloudflare services (DDNS + Tunnel)..."
 docker compose -f cloudflare/docker-compose.yml up -d --remove-orphans
 print_success "Cloudflare services started"
 echo ""
 
-# Step 7: Start Twingate connector (Zero Trust network access)
-print_info "Step 7: Starting Twingate connector..."
+# Step 6: Start Twingate connector (Zero Trust network access)
+print_info "Step 6: Starting Twingate connector..."
 if [ -f "twingate/docker-compose.yml" ]; then
     docker compose -f twingate/docker-compose.yml up -d --remove-orphans
     print_success "Twingate connector started"
@@ -110,8 +107,8 @@ else
 fi
 echo ""
 
-# Step 8: Start RustDesk server (Remote desktop)
-print_info "Step 8: Starting RustDesk server..."
+# Step 7: Start RustDesk server (Remote desktop)
+print_info "Step 7: Starting RustDesk server..."
 if [ -f "rustdesk/docker-compose.yml" ]; then
     docker compose -f rustdesk/docker-compose.yml up -d --remove-orphans
     print_success "RustDesk server started"
@@ -120,8 +117,8 @@ else
 fi
 echo ""
 
-# Step 9: Run Health Checks
-print_info "Step 9: Running health checks on all services..."
+# Step 8: Run Health Checks
+print_info "Step 8: Running health checks on all services..."
 echo ""
 docker compose -f utility/docker-compose.yml run --rm health-check
 

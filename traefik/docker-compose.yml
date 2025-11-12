@@ -16,8 +16,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
       - ./dynamic.yml:/etc/traefik/dynamic.yml:ro
-      - ./certs/origin-cert.pem:/etc/traefik/certs/origin-cert.pem:ro
-      - ./certs/origin-key.pem:/etc/traefik/certs/origin-key.pem:ro
       - ./logs:/var/log/traefik
     labels:
       - "traefik.enable=true"

@@ -2,14 +2,11 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
-    runtime: nvidia
     networks:
       - internal
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
     # Internal only - no external access
 
   open-webui:
