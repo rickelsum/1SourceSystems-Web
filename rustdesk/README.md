@@ -514,7 +514,7 @@ To control multiple VMs (Kali, Ubuntu, Windows, etc.):
 
 ### Works Alongside Cloudflare Tunnel
 
-- **Cloudflare Tunnel**: Public services (Open WebUI, n8n)
+- **Cloudflare Tunnel**: Public services (n8n)
 - **Twingate**: Private network access (Proxmox, SSH)
 - **RustDesk**: Remote desktop (Kali, VMs)
 

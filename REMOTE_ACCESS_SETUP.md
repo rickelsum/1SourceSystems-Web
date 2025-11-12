@@ -8,7 +8,7 @@ Your setup now includes three complementary access methods:
 
 | Solution | Purpose | When to Use |
 |----------|---------|-------------|
-| **Cloudflare Tunnel** | Public web services | Access Open WebUI, n8n, Portainer from anywhere |
+| **Cloudflare Tunnel** | Public web services | Access n8n, Portainer from anywhere |
 | **Twingate** | Private network access | Access Proxmox, SSH to VMs, internal services |
 | **RustDesk** | Remote desktop | Graphical access to Kali VM and other VMs |
 
@@ -64,11 +64,10 @@ Your setup now includes three complementary access methods:
 This automatically starts services in order:
 1. Traefik
 2. Database (PostgreSQL)
-3. AI Services (Ollama, Open-WebUI, n8n)
-4. Portainer
-5. Cloudflare (Tunnel, DDNS)
-6. **Twingate Connector** ← NEW
-7. **RustDesk Server** ← NEW
+3. Portainer
+4. Cloudflare (Tunnel, DDNS)
+5. **Twingate Connector**
+6. **RustDesk Server**
 
 ### Stop All Services
 
@@ -378,7 +377,7 @@ After completing setup:
 │  │  ┌──────▼──────────────────▼──────────────────▼────────┐  │ │
 │  │  │         Docker Network (internal + external)        │  │ │
 │  │  │                                                      │  │ │
-│  │  │  Traefik │ Ollama │ PostgreSQL │ Open-WebUI │ n8n  │  │ │
+│  │  │  Traefik │ PostgreSQL │ n8n  │  │ │
 │  │  └──────────────────────────────────────────────────────┘  │ │
 │  └─────────────────────────────────────────────────────────────┘ │
 │                                                                   │
@@ -400,7 +399,7 @@ Access Paths:
 
 You now have **complete remote access** to your entire Proxmox lab:
 
-✅ **Public Services**: Open WebUI, n8n, Portainer (via Cloudflare Tunnel)
+✅ **Public Services**: n8n, Portainer (via Cloudflare Tunnel)
 ✅ **Private Infrastructure**: Proxmox, VMs, internal services (via Twingate)
 ✅ **Remote Desktop**: Kali VM and other VMs (via RustDesk + Twingate)
 

@@ -33,7 +33,6 @@ In Cloudflare Tunnel dashboard, add these routes (all point to `http://traefik:8
 
 | Public Hostname | Service | URL |
 |----------------|---------|-----|
-| ai.yourdomain.com | HTTP | `traefik:80` |
 | portainer.yourdomain.com | HTTP | `traefik:80` |
 | n8n.yourdomain.com | HTTP | `traefik:80` |
 | db.yourdomain.com | HTTP | `traefik:80` |
@@ -65,7 +64,6 @@ The script automatically:
 
 Immediately available (no DNS propagation wait!):
 
-- 🤖 **AI Chat**: https://ai.1sourcesystems.com.au
 - 🐳 **Container Mgmt**: https://portainer.1sourcesystems.com.au
 - 🔄 **Automation**: https://n8n.1sourcesystems.com.au
 - 🗄️ **Database Admin**: https://db.1sourcesystems.com.au
@@ -121,11 +119,6 @@ docker logs traefik
 - PostgreSQL (internal only)
 - Adminer (database admin UI)
 
-**AI Stack** (`ai/`)
-- Ollama (AI models - internal only)
-- Open-WebUI (chat interface)
-- n8n (workflow automation)
-
 **Management Stack** (`portainer/`)
 - Portainer (container management)
 
@@ -136,7 +129,6 @@ docker logs traefik
 ## Security Notes
 
 🔒 **Internal Network Services** (not accessible from internet):
-- Ollama (AI backend)
 - PostgreSQL (database)
 
 🌐 **External Network Services** (accessible via HTTPS):
@@ -153,12 +145,6 @@ docker logs traefik
 # Stop all services
 ./stop.sh
 
-# Start specific stack
-docker compose -f ai/docker-compose.yml up -d
-
-# Stop specific stack
-docker compose -f ai/docker-compose.yml down
-
 # View logs
 docker compose logs -f <service-name>
 
@@ -169,10 +155,9 @@ docker compose pull && docker compose up -d
 ## Next Steps
 
 1. ✅ Change default PostgreSQL password in `.env`
-2. ✅ Set up first Ollama model: Visit https://ai.1sourcesystems.com.au
-3. ✅ Secure Portainer: Create admin account on first login
-4. ✅ Set up backups (see README.md)
-5. ✅ Explore n8n workflows
+2. ✅ Secure Portainer: Create admin account on first login
+3. ✅ Set up backups (see README.md)
+4. ✅ Explore n8n workflows
 
 ## Need Help?
 

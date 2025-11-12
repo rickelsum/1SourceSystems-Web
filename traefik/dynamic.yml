@@ -2,11 +2,17 @@
 
 http:
   middlewares:
-    # 1. Middleware to redirect all HTTP traffic to HTTPS
+    # 1. Middleware to redirect all HTTP traffic to HTTPS (disabled for Cloudflare Tunnel)
     https-redirect:
       redirectScheme:
         scheme: https
         permanent: true
+
+    # 1b. Middleware for Cloudflare Tunnel - no HTTPS redirect needed (Cloudflare handles it)
+    https-redirect-cf:
+      redirectScheme:
+        scheme: http
+        permanent: false
 
     # 2. Merged secure headers from both configurations
     secure-headers:

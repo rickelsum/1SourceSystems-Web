@@ -32,10 +32,10 @@ Twingate Connector (Docker Container)
 
 1. **Access Proxmox Web UI** from anywhere (https://proxmox-ip:8006)
 2. **SSH into Kali VM** and any other VMs
-3. **Access internal Docker services** (like Ollama, PostgreSQL)
+3. **Access internal Docker services** (like PostgreSQL)
 4. **Manage your entire lab** remotely without exposing anything publicly
 5. **Works with Cloudflare Tunnel** - They complement each other:
-   - Cloudflare Tunnel: For **public-facing** services (Open WebUI, n8n, Portainer)
+   - Cloudflare Tunnel: For **public-facing** services (n8n, Portainer)
    - Twingate: For **private infrastructure** access (Proxmox, VMs, internal services)
 
 ## Quick Setup Guide
@@ -118,13 +118,7 @@ Now tell Twingate what services you want to access:
 
 #### 5c. Add Internal Docker Services (Optional)
 
-Access services like Ollama or PostgreSQL that are only on the internal network:
-
-**Ollama (AI Backend)**:
-- **Name**: Ollama API
-- **Address**: `ollama` (Docker hostname) or `172.19.0.x` (Container IP)
-- **Protocols**: TCP
-- **Ports**: 11434
+Access services like PostgreSQL that are only on the internal network:
 
 **PostgreSQL**:
 - **Name**: PostgreSQL Database
@@ -216,7 +210,7 @@ Twingate will automatically load balance and failover between connectors.
 
 The connector is on both `external` and `internal` Docker networks, allowing you to access:
 
-- Services only on the internal network (Ollama, PostgreSQL)
+- Services only on the internal network (PostgreSQL)
 - Services on the external network
 - Services on your host network (Proxmox, VMs)
 
@@ -224,12 +218,12 @@ To access an internal Docker service:
 
 1. Find the container IP:
    ```bash
-   docker inspect ollama | grep IPAddress
+   docker inspect postgres | grep IPAddress
    ```
 
 2. Add as a Twingate Resource:
    - **Address**: `172.19.0.x` (the IP you found)
-   - **Port**: `11434` (for Ollama)
+   - **Port**: `5432` (for PostgreSQL)
 
 ### Monitoring Connector Health
 
@@ -336,7 +330,7 @@ To check:
 
 ### Twingate + Cloudflare Tunnel = Perfect Combo
 
-- **Cloudflare Tunnel**: Public services (Open WebUI, n8n, Portainer)
+- **Cloudflare Tunnel**: Public services (n8n, Portainer)
   - Anyone can access (with authentication)
   - Optimized for web traffic
   - DDoS protection
@@ -350,7 +344,7 @@ To check:
 
 **Public Access** (via Cloudflare Tunnel):
 ```
-User → Cloudflare → Tunnel → Traefik → Open WebUI
+User → Cloudflare → Tunnel → Traefik → n8n/Portainer
 ```
 
 **Private Admin Access** (via Twingate):

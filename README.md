@@ -23,8 +23,6 @@ The infrastructure is organized into modular service stacks:
 ├── db/                         # Database stack
 │   └── docker-compose.yml     # PostgreSQL + Adminer
 │
-├── ai/                         # AI services stack
-│   └── docker-compose.yml     # n8n, Ollama, Open-WebUI
 │
 ├── portainer/                  # Container management
 │   └── docker-compose.yml
@@ -48,7 +46,6 @@ The infrastructure is organized into modular service stacks:
 
 **External Network** (accessible via Cloudflare Tunnel):
 - Traefik (reverse proxy)
-- Open WebUI (AI interface)
 - Portainer (container management)
 - n8n (workflow automation)
 - Adminer (database admin)
@@ -57,7 +54,6 @@ The infrastructure is organized into modular service stacks:
 - RustDesk Server (remote desktop server)
 
 **Internal Network** (only accessible between containers):
-- Ollama (AI model backend)
 - PostgreSQL (database)
 - Twingate Connector (can access internal services)
 - RustDesk Server (can access internal services)
@@ -82,12 +78,10 @@ User → Cloudflare (HTTPS) → Tunnel → Docker Network → Traefik (HTTP) →
 |---------|------------|------|---------|
 | **Public Services (via Cloudflare Tunnel)** ||||
 | Traefik Dashboard | https://traefik.1sourcesystems.com.au | External | Reverse proxy dashboard |
-| Open WebUI | https://ai.1sourcesystems.com.au | External | AI chat interface |
 | Portainer | https://portainer.1sourcesystems.com.au | External | Docker management |
 | n8n | https://n8n.1sourcesystems.com.au | External | Workflow automation |
 | Adminer | https://db.1sourcesystems.com.au | External | Database admin |
 | **Internal Services** ||||
-| Ollama | Internal only | Internal | AI model backend |
 | PostgreSQL | Internal only | Internal | Database |
 | **Remote Access Services** ||||
 | Twingate | Via client app | Zero Trust | Secure network access to entire lab |
@@ -195,7 +189,7 @@ Update these files with your domain:
 
 The script will:
 - Create networks and volumes
-- Start services in the correct order (Traefik → DB → AI → Portainer → Cloudflare)
+- Start services in the correct order (Traefik → DB → Portainer → Cloudflare)
 - Wait for PostgreSQL to be healthy before starting dependent services
 - Display status and service URLs
 
@@ -221,7 +215,6 @@ Updated to new configuration
 
 After tunnel connects (usually instant), access via:
 
-- https://ai.yourdomain.com - Open WebUI
 - https://portainer.yourdomain.com - Portainer
 - https://n8n.yourdomain.com - n8n
 - https://db.yourdomain.com - Adminer
@@ -254,7 +247,7 @@ DOMAIN=yourdomain.com
 ### Network Isolation
 - **Internal network**: Completely isolated from the internet
 - **External network**: Only exposed through Cloudflare Tunnel
-- Ollama and PostgreSQL are NOT accessible from the internet
+- PostgreSQL is NOT accessible from the internet
 - No ports exposed on your router
 
 ### SSL/TLS
@@ -372,11 +365,7 @@ Login credentials:
 
 # Start specific service stack
 docker compose -f traefik/docker-compose.yml up -d
-docker compose -f ai/docker-compose.yml up -d
 docker compose -f db/docker-compose.yml up -d
-
-# Stop specific service stack
-docker compose -f ai/docker-compose.yml down
 
 # View all running containers
 docker compose ps
@@ -401,10 +390,6 @@ docker compose down --volumes
 docker compose pull
 docker compose up -d
 
-# Update specific stack
-docker compose -f ai/docker-compose.yml pull
-docker compose -f ai/docker-compose.yml up -d
-
 # Check tunnel connectivity
 docker exec cloudflared cloudflared tunnel info
 ```
@@ -414,7 +399,7 @@ docker exec cloudflared cloudflared tunnel info
 Important directories to backup:
 
 - `traefik/certs/` - Cloudflare origin certificates
-- Docker volumes (PostgreSQL, n8n, Open WebUI data)
+- Docker volumes (PostgreSQL, n8n data)
 
 ```bash
 # Backup PostgreSQL
@@ -493,12 +478,6 @@ docker compose up -d
 docker compose logs -f postgres
 ```
 
-### AI Services
-```bash
-cd ai
-docker compose up -d
-docker compose logs -f ollama
-```
 
 ### Benefits of Modular Structure
 - **Independent Updates**: Update one stack without affecting others
@@ -518,7 +497,7 @@ This setup includes two complementary remote access solutions:
 **Use cases**:
 - Access Proxmox Web UI (`https://proxmox-ip:8006`)
 - SSH into Kali VM or any other VMs
-- Access internal Docker services (Ollama, PostgreSQL)
+- Access internal Docker services (PostgreSQL)
 - Manage your entire home lab infrastructure
 
 **How to set up**:
@@ -587,13 +566,12 @@ These three solutions work together perfectly:
 
 | Solution | Purpose | Use For |
 |----------|---------|---------|
-| **Cloudflare Tunnel** | Public web services | Open WebUI, n8n, Portainer (for public access) |
+| **Cloudflare Tunnel** | Public web services | n8n, Portainer (for public access) |
 | **Twingate** | Private infrastructure | Proxmox, VMs, SSH, internal Docker services |
 | **RustDesk** | Remote desktop | Graphical access to VMs (Kali, Windows, etc.) |
 
 **Example scenarios**:
 
-- **Public AI chatbot**: Use Cloudflare Tunnel → Anyone can access Open WebUI
 - **Manage Proxmox**: Use Twingate → Only you can access
 - **Work on Kali VM**: Use Twingate + RustDesk → Full desktop access
 - **SSH to a VM**: Use Twingate → Direct terminal access
@@ -642,7 +620,5 @@ For issues or questions:
 Built with:
 - [Traefik](https://traefik.io/) - Reverse proxy
 - [Cloudflare Tunnel](https://www.cloudflare.com/products/tunnel/) - Secure access
-- [Open WebUI](https://github.com/open-webui/open-webui) - AI interface
-- [Ollama](https://ollama.ai/) - Local AI models
 - [n8n](https://n8n.io/) - Workflow automation
 - [Portainer](https://www.portainer.io/) - Container management

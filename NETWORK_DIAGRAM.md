@@ -11,7 +11,6 @@ The infrastructure uses a **modular Docker Compose structure** with services org
 ├── stop.sh                # Graceful shutdown
 ├── traefik/               # Reverse proxy stack
 ├── db/                    # Database stack
-├── ai/                    # AI services stack
 ├── portainer/             # Management stack
 └── cloudflare/            # Cloudflare services
 ```
@@ -27,7 +26,6 @@ Each stack has its own `docker-compose.yml` and can be managed independently.
 └────────────────────────────────┬────────────────────────────────────────┘
                                  │
                                  │ DNS Resolution
-                                 │ ai.1sourcesystems.com.au
                                  │ portainer.1sourcesystems.com.au
                                  │ etc...
                                  │
@@ -75,12 +73,6 @@ Each stack has its own `docker-compose.yml` and can be managed independently.
 │  │   (via Traefik routing)       │    │    (no external access)    │   │
 │  │                               │    │                            │   │
 │  │  ┌─────────────────────┐     │    │  ┌──────────────────┐     │   │
-│  │  │   Open WebUI        │◄────┼────┼──│  Ollama          │     │   │
-│  │  │   ai.1source...     │     │    │  │  (AI Backend)    │     │   │
-│  │  │   :8080             │     │    │  │  :11434          │     │   │
-│  │  └─────────────────────┘     │    │  └──────────────────┘     │   │
-│  │                               │    │                            │   │
-│  │  ┌─────────────────────┐     │    │  ┌──────────────────┐     │   │
 │  │  │   Portainer         │     │    │  │  PostgreSQL      │     │   │
 │  │  │   portainer.1sou... │     │    │  │  (Database)      │     │   │
 │  │  │   :9000             │     │    │  │  :5432           │     │   │
@@ -112,29 +104,7 @@ Each stack has its own `docker-compose.yml` and can be managed independently.
 
 ## Traffic Flow Examples
 
-### Example 1: User Accessing Open WebUI
-
-```
-1. User browses to: https://ai.1sourcesystems.com.au
-   │
-2. DNS lookup → Cloudflare → Returns your public IP
-   │
-3. Request hits ISP Router → Port 443 forwarded to Docker Server
-   │
-4. Traefik receives request on port 443
-   │
-5. Traefik checks hostname: "ai.1sourcesystems.com.au"
-   │
-6. Traefik routes to: open-webui:8080 (external network)
-   │
-7. Open WebUI needs AI model → Calls ollama:11434 (internal network)
-   │
-8. Ollama processes request → Returns to Open WebUI
-   │
-9. Open WebUI returns response → Traefik → User
-```
-
-### Example 2: n8n Accessing PostgreSQL
+### Example 1: n8n Accessing PostgreSQL
 
 ```
 1. n8n workflow needs database access
@@ -149,7 +119,7 @@ Each stack has its own `docker-compose.yml` and can be managed independently.
    PostgreSQL is NOT accessible from internet
 ```
 
-### Example 3: IP Address Changes
+### Example 2: IP Address Changes
 
 ```
 1. ISP assigns new IP to your router
@@ -187,7 +157,6 @@ Each stack has its own `docker-compose.yml` and can be managed independently.
 
 | Hostname | Container | Internal Port |
 |----------|-----------|---------------|
-| ai.1sourcesystems.com.au | open-webui | 8080 |
 | portainer.1sourcesystems.com.au | portainer | 9000 |
 | n8n.1sourcesystems.com.au | n8n | 5678 |
 | db.1sourcesystems.com.au | adminer | 8080 |
@@ -197,7 +166,6 @@ Each stack has its own `docker-compose.yml` and can be managed independently.
 
 | Service | Port | Accessed By |
 |---------|------|-------------|
-| ollama | 11434 | open-webui only |
 | postgres | 5432 | n8n, adminer only |
 
 ## Security Layers
@@ -287,26 +255,13 @@ Step 3: ┌──────┐          ┌──────────┐
         │ health)│        │          │
         └──┬───┘          │          │
            │              │          │
-Step 4:    ▼              ▼          ▼
-      ┌─────────┐   ┌──────────┐  ┌──────────┐
-      │  ai/    │   │ai/       │  │portainer/│
-      │  n8n    │   │ollama    │  │portainer │
-      │(needs DB)│  │          │  │          │
-      └─────────┘   └────┬─────┘  └──────────┘
-                         │
-                    ┌────▼─────┐
-                    │   ai/    │
-                    │open-webui│
-                    │(needs    │
-                    │ ollama)  │
-                    └──────────┘
-
-Step 5:              ┌──────────────┐
-                     │ cloudflare/  │
-                     │cloudflared   │
-                     │cloudflare-   │
-                     │   ddns       │
-                     └──────────────┘
+Step 4:    ▼              ▼
+      ┌─────────┐   ┌──────────────┐
+      │portainer│   │ cloudflare/  │
+      │portainer│   │cloudflared   │
+      │          │  │cloudflare-   │
+      └─────────┘   │   ddns       │
+                    └──────────────┘
 ```
 
 **Startup Script Benefits:**
@@ -319,13 +274,11 @@ Step 5:              ┌──────────────┐
 
 ### What's Exposed to Internet:
 ✅ Traefik (ports 80, 443)
-✅ Open WebUI (via Traefik)
 ✅ Portainer (via Traefik)
 ✅ n8n (via Traefik)
 ✅ Adminer (via Traefik)
 
 ### What's Internal Only:
-🔒 Ollama (AI backend)
 🔒 PostgreSQL (database)
 🔒 Docker socket (container management)
 
@@ -364,9 +317,6 @@ cd traefik && docker compose up -d
 
 # Database stack
 cd db && docker compose up -d
-
-# AI services stack
-cd ai && docker compose up -d
 
 # Portainer stack
 cd portainer && docker compose up -d

@@ -2,6 +2,8 @@ services:
   cloudflare-ddns:
     image: oznu/cloudflare-ddns:latest
     container_name: cloudflare-ddns
+    env_file:
+      - ../.env
     restart: unless-stopped
     environment:
       - API_KEY=${CF_DNS_API_TOKEN}

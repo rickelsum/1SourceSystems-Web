@@ -37,7 +37,7 @@ Your infrastructure now has three complementary access methods:
 
 ### 1. Cloudflare Tunnel (Public Services)
 - **Purpose**: Expose web services to the public internet
-- **Services**: Open WebUI, n8n, Portainer, Adminer, Traefik
+- **Services**: n8n, Portainer, Adminer, Traefik
 - **Access**: Anyone with URL (authenticated)
 - **Setup Status**: ✅ Already configured
 
@@ -92,8 +92,7 @@ Your infrastructure now has three complementary access methods:
    |--------------|---------|----------|------|
    | Proxmox Web UI | 192.168.1.100 | HTTPS | 8006 |
    | Kali VM SSH | 192.168.1.101 | TCP | 22 |
-   | Ollama API | ollama (or 172.19.0.x) | TCP | 11434 |
-   | PostgreSQL | postgres (or 172.19.0.x) | TCP | 5432 |
+      | PostgreSQL | postgres (or 172.19.0.x) | TCP | 5432 |
 
 6. **Install Twingate Client on Arch Laptop**
    ```bash
@@ -244,7 +243,7 @@ See [.env.example](.env.example) for complete template.
 This now starts:
 1. Traefik (reverse proxy)
 2. Database (PostgreSQL + Adminer)
-3. AI Services (Ollama, Open-WebUI, n8n)
+3. n8n (Workflow Automation)
 4. Portainer
 5. Cloudflare (DDNS + Tunnel)
 6. **Twingate Connector** ← NEW
@@ -427,7 +426,7 @@ After basic setup:
 
 You now have a **complete remote access solution**:
 
-✅ **Cloudflare Tunnel** - Public web services (Open WebUI, n8n, Portainer)
+✅ **Cloudflare Tunnel** - Public web services (n8n, Portainer)
 ✅ **Twingate** - Private infrastructure access (Proxmox, VMs, internal services)
 ✅ **RustDesk** - Remote desktop (Kali VM and other VMs)
 

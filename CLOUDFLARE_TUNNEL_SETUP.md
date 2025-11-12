@@ -46,27 +46,22 @@ Cloudflare Tunnel creates a secure outbound-only connection from your server to 
 
 In the Cloudflare Tunnel dashboard, add routes for each service:
 
-#### Route 1: Open WebUI (AI)
-- **Public hostname:** `ai.1sourcesystems.com.au`
-- **Service type:** `HTTP`
-- **URL:** `traefik:80` (or `http://traefik:80`)
-
-#### Route 2: Portainer
+#### Route 1: Portainer
 - **Public hostname:** `portainer.1sourcesystems.com.au`
 - **Service type:** `HTTP`
 - **URL:** `traefik:80`
 
-#### Route 3: n8n
+#### Route 2: n8n
 - **Public hostname:** `n8n.1sourcesystems.com.au`
 - **Service type:** `HTTP`
 - **URL:** `traefik:80`
 
-#### Route 4: Adminer (Database)
+#### Route 3: Adminer (Database)
 - **Public hostname:** `db.1sourcesystems.com.au`
 - **Service type:** `HTTP`
 - **URL:** `traefik:80`
 
-#### Route 5: Traefik Dashboard
+#### Route 4: Traefik Dashboard
 - **Public hostname:** `traefik.1sourcesystems.com.au`
 - **Service type:** `HTTP`
 - **URL:** `traefik:80`

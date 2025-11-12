@@ -7,6 +7,8 @@ services:
   traefik:
     image: traefik:v3.0
     container_name: traefik
+    env_file:
+      - .env
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -38,6 +40,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: postgres
+    env_file:
+      - .env
     networks:
       - internal
     environment:
@@ -56,6 +60,8 @@ services:
   n8n:
     image: n8nio/n8n:latest
     container_name: n8n
+    env_file:
+      - .env
     networks:
       - external
       - internal
@@ -79,20 +85,21 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=1sourcesystems-web_external"
-      # HTTP Router
       - "traefik.http.routers.n8n-http.entrypoints=web"
       - "traefik.http.routers.n8n-http.rule=Host(`n8n.1sourcesystems.com.au`)"
-      - "traefik.http.routers.n8n-http.middlewares=https-redirect@file"
-      # HTTPS Router
+      - "traefik.http.routers.n8n-http.service=n8n"
       - "traefik.http.routers.n8n-https.entrypoints=websecure"
       - "traefik.http.routers.n8n-https.rule=Host(`n8n.1sourcesystems.com.au`)"
       - "traefik.http.routers.n8n-https.tls=true"
       - "traefik.http.routers.n8n-https.middlewares=secure-headers@file"
+      - "traefik.http.routers.n8n-https.service=n8n"
       - "traefik.http.services.n8n.loadbalancer.server.port=5678"
 
   adminer:
     image: adminer:latest
     container_name: adminer
+    env_file:
+      - .env
     networks:
       - external
       - internal
@@ -104,20 +111,21 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=1sourcesystems-web_external"
-      # HTTP Router
       - "traefik.http.routers.adminer-http.entrypoints=web"
       - "traefik.http.routers.adminer-http.rule=Host(`db.1sourcesystems.com.au`)"
-      - "traefik.http.routers.adminer-http.middlewares=https-redirect@file"
-      # HTTPS Router
+      - "traefik.http.routers.adminer-http.service=adminer"
       - "traefik.http.routers.adminer-https.entrypoints=websecure"
       - "traefik.http.routers.adminer-https.rule=Host(`db.1sourcesystems.com.au`)"
       - "traefik.http.routers.adminer-https.tls=true"
       - "traefik.http.routers.adminer-https.middlewares=secure-headers@file"
+      - "traefik.http.routers.adminer-https.service=adminer"
       - "traefik.http.services.adminer.loadbalancer.server.port=8080"
 
   cloudflare-ddns:
     image: oznu/cloudflare-ddns:latest
     container_name: cloudflare-ddns
+    env_file:
+      - .env
     restart: unless-stopped
     environment:
       - API_KEY=${CF_DNS_API_TOKEN}
@@ -131,6 +139,8 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
+    env_file:
+      - .env
     restart: unless-stopped
     command: tunnel run
     networks:
@@ -140,14 +150,13 @@ services:
 
 networks:
   external:
-    driver: bridge
+    external: true
+    name: 1sourcesystems-web_external
   internal:
-    driver: bridge
-    internal: true
+    external: true
+    name: 1sourcesystems-web_internal
 
 volumes:
-  ollama_data:
-  open_webui_data:
   portainer_data:
   postgres_data:
   n8n_data:

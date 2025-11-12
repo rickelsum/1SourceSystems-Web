@@ -9,7 +9,7 @@ This folder contains utility services for the 1SourceSystems-Web infrastructure.
 An Alpine Linux container that performs health checks on all services via HTTPS.
 
 **Features:**
-- Tests all services (Traefik, Portainer, Adminer, Open-WebUI, n8n)
+- Tests all services (Traefik, Portainer, Adminer, n8n)
 - Uses HTTPS with proper Host headers
 - Retry logic for transient failures
 - Color-coded output
@@ -31,7 +31,6 @@ The health check is automatically run by `./start.sh` after all services are sta
 | Traefik Dashboard | https://traefik.1sourcesystems.com.au | HTTP 200 |
 | Portainer | https://portainer.1sourcesystems.com.au | HTTP 200 |
 | Adminer | https://db.1sourcesystems.com.au | HTTP 200 |
-| Open-WebUI | https://ai.1sourcesystems.com.au | HTTP 200 |
 | n8n | https://n8n.1sourcesystems.com.au | HTTP 200 |
 
 **Script Details:**

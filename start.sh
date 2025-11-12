@@ -52,14 +52,12 @@ docker network create 1sourcesystems-web_external 2>/dev/null || true
 docker network create 1sourcesystems-web_internal 2>/dev/null || true
 docker volume create 1sourcesystems-web_postgres_data 2>/dev/null || true
 docker volume create 1sourcesystems-web_n8n_data 2>/dev/null || true
-docker volume create 1sourcesystems-web_ollama_data 2>/dev/null || true
-docker volume create 1sourcesystems-web_open_webui_data 2>/dev/null || true
 print_success "Networks and volumes ready"
 echo ""
 
 # Step 2: Start Traefik (reverse proxy - must be first)
 print_info "Step 2: Starting Traefik reverse proxy..."
-docker compose -f traefik/docker-compose.yml up -d --remove-orphans
+docker compose --env-file .env -f traefik/docker-compose.yml up -d --remove-orphans
 print_success "Traefik started"
 echo ""
 
@@ -69,7 +67,7 @@ sleep 3
 
 # Step 3: Start Database services (PostgreSQL + Adminer)
 print_info "Step 3: Starting database services (PostgreSQL + Adminer)..."
-docker compose -f db/docker-compose.yml up -d --remove-orphans
+docker compose --env-file .env -f db/docker-compose.yml up -d --remove-orphans
 print_success "Database services started"
 echo ""
 
@@ -81,26 +79,16 @@ timeout 30 bash -c 'until docker exec postgres pg_isready -U n8n &>/dev/null; do
 print_success "PostgreSQL is ready"
 echo ""
 
-# Step 4: Start AI services (n8n + Ollama + Open WebUI)
-print_info "Step 4: Starting AI services (n8n + Ollama + Open WebUI)..."
-if [ -f "ai/docker-compose.yml" ]; then
-    docker compose -f ai/docker-compose.yml up -d --remove-orphans
-    print_success "AI services started"
-else
-    print_warning "AI services not configured (ai/docker-compose.yml not found)"
-fi
-echo ""
-
 # Step 5: Start Cloudflare services (DDNS + Tunnel)
 print_info "Step 5: Starting Cloudflare services (DDNS + Tunnel)..."
-docker compose -f cloudflare/docker-compose.yml up -d --remove-orphans
+docker compose --env-file .env -f cloudflare/docker-compose.yml up -d --remove-orphans
 print_success "Cloudflare services started"
 echo ""
 
 # Step 6: Start Twingate connector (Zero Trust network access)
 print_info "Step 6: Starting Twingate connector..."
 if [ -f "twingate/docker-compose.yml" ]; then
-    docker compose -f twingate/docker-compose.yml up -d --remove-orphans
+    docker compose --env-file .env -f twingate/docker-compose.yml up -d --remove-orphans
     print_success "Twingate connector started"
 else
     print_warning "Twingate not configured (twingate/docker-compose.yml not found)"
@@ -110,22 +98,23 @@ echo ""
 # Step 7: Start RustDesk server (Remote desktop)
 print_info "Step 7: Starting RustDesk server..."
 if [ -f "rustdesk/docker-compose.yml" ]; then
-    docker compose -f rustdesk/docker-compose.yml up -d --remove-orphans
+    docker compose --env-file .env -f rustdesk/docker-compose.yml up -d --remove-orphans
     print_success "RustDesk server started"
 else
     print_warning "RustDesk not configured (rustdesk/docker-compose.yml not found)"
 fi
 echo ""
 
+
 # Step 8: Run Health Checks
 print_info "Step 8: Running health checks on all services..."
 echo ""
-docker compose -f utility/docker-compose.yml run --rm health-check
+docker compose --env-file .env -f utility/docker-compose.yml run --rm health-check
 
 # Final status check
 print_info "Checking service status..."
 echo ""
-docker compose ps
+docker compose --env-file .env ps
 
 echo ""
 print_info "To stop all services, run: ./stop.sh or docker compose down"

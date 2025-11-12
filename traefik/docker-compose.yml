@@ -2,6 +2,8 @@ services:
   traefik:
     image: traefik:v3.0
     container_name: traefik
+    env_file:
+      - ../.env
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -19,11 +21,14 @@ services:
       - ./logs:/var/log/traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.1sourcesystems.com.au`)"
-      - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.middlewares=secure-headers@file"
+      - "traefik.http.routers.traefik-http.entrypoints=web"
+      - "traefik.http.routers.traefik-http.rule=Host(`traefik.1sourcesystems.com.au`)"
+      - "traefik.http.routers.traefik-http.service=api@internal"
+      - "traefik.http.routers.traefik-https.entrypoints=websecure"
+      - "traefik.http.routers.traefik-https.rule=Host(`traefik.1sourcesystems.com.au`)"
+      - "traefik.http.routers.traefik-https.tls=true"
+      - "traefik.http.routers.traefik-https.service=api@internal"
+      - "traefik.http.routers.traefik-https.middlewares=secure-headers@file"
 
 networks:
   external:

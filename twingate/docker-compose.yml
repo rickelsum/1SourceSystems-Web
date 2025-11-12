@@ -2,6 +2,8 @@ services:
   twingate-connector:
     image: twingate/connector:latest
     container_name: twingate-connector
+    env_file:
+      - ../.env
     restart: unless-stopped
     networks:
       - external

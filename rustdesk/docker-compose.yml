@@ -4,6 +4,8 @@ services:
   rustdesk-server:
     image: rustdesk/rustdesk-server:latest
     container_name: rustdesk-server
+    env_file:
+      - ../.env
     command: hbbs -r ${RUSTDESK_RELAY_SERVER:-192.168.1.11:21117}
     restart: unless-stopped
     networks:
@@ -30,6 +32,8 @@ services:
   rustdesk-relay:
     image: rustdesk/rustdesk-server:latest
     container_name: rustdesk-relay
+    env_file:
+      - ../.env
     command: hbbr
     restart: unless-stopped
     networks:
