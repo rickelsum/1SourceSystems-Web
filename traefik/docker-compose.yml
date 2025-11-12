@@ -24,11 +24,12 @@ services:
       - "traefik.http.routers.traefik-http.entrypoints=web"
       - "traefik.http.routers.traefik-http.rule=Host(`traefik.1sourcesystems.com.au`)"
       - "traefik.http.routers.traefik-http.service=api@internal"
+      - "traefik.http.routers.traefik-http.middlewares=traefik-auth@file"
       - "traefik.http.routers.traefik-https.entrypoints=websecure"
       - "traefik.http.routers.traefik-https.rule=Host(`traefik.1sourcesystems.com.au`)"
       - "traefik.http.routers.traefik-https.tls=true"
       - "traefik.http.routers.traefik-https.service=api@internal"
-      - "traefik.http.routers.traefik-https.middlewares=secure-headers@file"
+      - "traefik.http.routers.traefik-https.middlewares=traefik-auth@file,secure-headers@file"
 
 networks:
   external:

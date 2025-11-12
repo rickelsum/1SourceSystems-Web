@@ -79,6 +79,12 @@ timeout 30 bash -c 'until docker exec postgres pg_isready -U n8n &>/dev/null; do
 print_success "PostgreSQL is ready"
 echo ""
 
+# Step 4: Start n8n (Workflow Automation)
+print_info "Step 4: Starting n8n automation service..."
+docker compose --env-file .env up -d --no-deps n8n
+print_success "n8n service started"
+echo ""
+
 # Step 5: Start Cloudflare services (DDNS + Tunnel)
 print_info "Step 5: Starting Cloudflare services (DDNS + Tunnel)..."
 docker compose --env-file .env -f cloudflare/docker-compose.yml up -d --remove-orphans

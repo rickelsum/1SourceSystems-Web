@@ -39,6 +39,12 @@ http:
     #       - "10.0.0.0/8"
     #       - "172.16.0.0/12"
 
+    # 5. Basic authentication for Traefik dashboard
+    traefik-auth:
+      basicAuth:
+        users:
+          - "Hunt3rJake:$2b$12$9qkdg9IGZJResMTIh64zNOAhMTMfnfwXuemLPdgl9ugxkcLUrYZei"
+
 # 5. TLS configuration - using ACME Let's Encrypt
 tls:
   options:
